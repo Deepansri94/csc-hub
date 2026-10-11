@@ -1,4 +1,4 @@
-# SRI BALAJI e-SEVAI MAIYAM & CSC KIOSK HUB (csc-hub)
+# CSC-HUB (csc-hub)
 
 An enterprise-grade, offline-first application architecture built for Common Service Centres (CSC / இ-சேவை மையம்), digital business kiosks, and Xerox/print centers in India.
 
@@ -38,7 +38,7 @@ The project features a **Dual-Mode System**:
 - **Audit Reports Inspector**: Upload client end-of-day JSON backups to inspect total revenue, cash vs UPI breakdown, invoices count, and customer credit ledger.
 
 ### 🖥️ 2. What the Client Does (Desktop Kiosk)
-- **Install & Launch**: Install `CSCKiosk-Setup.exe` (Windows) or open via browser PWA.
+- **Install & Launch**: Install `CSC-HUB-Setup.exe` (Windows) or open via browser PWA.
 - **Store & License Setup**: Enter the license key or upload `csc_license_*.json`, then import `csc_master_catalog_2026.json`.
 - **Fast Counter Operations**: Rapid billing for certificates, utilities, and Xerox jobs with UPI dynamic QR code and thermal printing.
 - **WhatsApp Hub**: Direct or silent background WhatsApp dispatches for balance reminders and public scheme notifications.

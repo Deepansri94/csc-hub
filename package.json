@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.csc.hub",
-    "productName": "CSC e-Sevai Kiosk Hub",
+    "productName": "CSC-HUB",
     "directories": {
       "output": "release"
     },

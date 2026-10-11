@@ -199,7 +199,7 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
   // Export License JSON for desktop client
   const handleExportLicenseFile = (lic: DesktopLicense) => {
     const payload = {
-      app: 'CSC e-Sevai Kiosk Desktop',
+      app: 'CSC-HUB Desktop',
       license: lic,
       generatedAt: new Date().toISOString(),
       authorizedBy: 'Web Administration Module',
@@ -240,7 +240,7 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (!parsed.invoices && !parsed.kioskSettings) {
-          setAuditImportMessage('Invalid file format. Please upload a valid CSC Kiosk exported backup JSON.');
+          setAuditImportMessage('Invalid file format. Please upload a valid CSC-HUB exported backup JSON.');
           return;
         }
 
