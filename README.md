@@ -6,7 +6,7 @@ The project features a **Dual-Mode System**:
 1. 👑 **Web Admin Module**: Central management portal for user accounts, kiosk license issuance, master price catalog distribution, and JSON audit report inspection.
 2. 🖥️ **Client Desktop Application (Electron)**: Offline-first counter application for instant POS billing, Xerox rate calculation, GST/token receipts, customer ledger, Baileys silent WhatsApp messaging, and daily cash tallies.
 
-👉 **Complete Workflow & Roles Guide**: See [`docs/ADMIN_CLIENT_WORKFLOW.md`](docs/ADMIN_CLIENT_WORKFLOW.md) for full details on how Admin registers clients and how clients set up their store.
+👉 **Complete Workflow & Installation Guide**: See [`docs/ADMIN_CLIENT_WORKFLOW.md`](docs/ADMIN_CLIENT_WORKFLOW.md) and [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md) for full details on how Admin registers clients, sets up their store, and how to download/install the desktop app.
 
 ---
 
