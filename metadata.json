@@ -1,0 +1,6 @@
+{
+  "name": "CSC e-Sevai Kiosk Manager",
+  "description": "Comprehensive PWA for Common Service Centres & e-Sevai Maiyam with offline billing, Xerox & printing calculator, Khata ledger, PDF invoices, and WhatsApp client follow-ups.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
