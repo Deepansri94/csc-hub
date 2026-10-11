@@ -166,6 +166,19 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  const dataDir = path.join(app.getPath('userData'), 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+
+  ipcMain.on('fs-save', (event, key, data) => {
+    fs.writeFileSync(path.join(dataDir, `${key}.json`), data);
+    event.returnValue = true;
+  });
+
+  ipcMain.on('fs-load', (event, key) => {
+    const filePath = path.join(dataDir, `${key}.json`);
+    event.returnValue = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : null;
+  });
+
   startBackendServer();
   setTimeout(createWindow, 1500);
 

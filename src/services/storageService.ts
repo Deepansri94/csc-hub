@@ -1035,7 +1035,7 @@ export class StorageService {
 
   // Operators
   static getOperators(): Operator[] {
-    const raw = localStorage.getItem(STORAGE_KEYS.OPERATORS);
+    const raw = this.storageGet(STORAGE_KEYS.OPERATORS);
     return raw ? JSON.parse(raw) : DEFAULT_OPERATORS;
   }
 
@@ -1592,4 +1592,29 @@ export class StorageService {
     this.init();
     window.dispatchEvent(new Event('csc_data_changed'));
   }
+
+  // --- Storage Bridge ---
+  private static storageSet(key: string, value: string): void {
+    if ((window as any).electronAPI?.storage) {
+      (window as any).electronAPI.storage.save(key, value);
+    } else {
+      localStorage.setItem(key, value);
+    }
+  }
+
+  private static storageGet(key: string): string | null {
+    if ((window as any).electronAPI?.storage) {
+      return (window as any).electronAPI.storage.load(key);
+    }
+    return localStorage.getItem(key);
+  }
+
+  private static storageRemove(key: string): void {
+    if ((window as any).electronAPI?.storage) {
+       localStorage.removeItem(key); // Simplified: clear for now
+    } else {
+       localStorage.removeItem(key);
+    }
+  }
+  // --- End Storage Bridge ---
 }

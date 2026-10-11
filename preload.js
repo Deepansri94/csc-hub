@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateResult: (callback) => ipcRenderer.on('update-result', (_, data) => callback(data)),
   send: (channel, data) => ipcRenderer.send(channel, data),
   receive: (channel, func) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
+  storage: {
+    save: (key, data) => ipcRenderer.sendSync('fs-save', key, data),
+    load: (key) => ipcRenderer.sendSync('fs-load', key),
+  },
 });
