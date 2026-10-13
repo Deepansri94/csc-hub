@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>CSC e-Sevai Kiosk Manager</title>
+    <meta name="description" content="Comprehensive PWA for Common Service Centres & e-Sevai Maiyam with offline billing, Xerox & printing calculator, Khata ledger, PDF invoices, and WhatsApp client follow-ups." />
+    <meta property="og:title" content="CSC e-Sevai Kiosk Manager" />
+    <meta property="og:description" content="Comprehensive PWA for Common Service Centres & e-Sevai Maiyam with offline billing, Xerox & printing calculator, Khata ledger, PDF invoices, and WhatsApp client follow-ups." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0f2b5c" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="e-Sevai" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script>
+      // Vite HMR WebSocket Shim for Cloud Container & iFrame Previews
+      (function() {
+        const OriginalWebSocket = window.WebSocket;
+        if (!OriginalWebSocket) return;
+        window.WebSocket = function(url, protocols) {
+          const isViteHmr = (typeof protocols === 'string' && protocols.includes('vite-hmr')) ||
+                            (Array.isArray(protocols) && protocols.includes('vite-hmr')) ||
+                            (typeof url === 'string' && (url.includes('vite-hmr') || url.includes('/@vite/')));
+          if (isViteHmr) {
+            const listeners = {};
+            const mockWs = {
+              readyState: 0,
+              CONNECTING: 0,
+              OPEN: 1,
+              CLOSING: 2,
+              CLOSED: 3,
+              url: url,
+              protocol: 'vite-hmr',
+              addEventListener: function(type, fn) {
+                if (!listeners[type]) listeners[type] = [];
+                listeners[type].push(fn);
+                if (type === 'open' && mockWs.readyState === 1) {
+                  setTimeout(fn, 0);
+                }
+              },
+              removeEventListener: function(type, fn) {
+                if (listeners[type]) {
+                  listeners[type] = listeners[type].filter(function(f) { return f !== fn; });
+                }
+              },
+              send: function() {},
+              close: function() {
+                mockWs.readyState = 3;
+                if (listeners['close']) {
+                  listeners['close'].forEach(function(f) { f({ wasClean: true }); });
+                }
+              }
+            };
+            setTimeout(function() {
+              mockWs.readyState = 1;
+              if (listeners['open']) {
+                listeners['open'].forEach(function(f) { f(); });
+              }
+            }, 10);
+            return mockWs;
+          }
+          return new OriginalWebSocket(url, protocols);
+        };
+        window.WebSocket.prototype = OriginalWebSocket.prototype;
+        window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+        window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+        window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+        window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+
+        window.addEventListener('error', function(e) {
+          if (e.message && (e.message.includes('WebSocket') || e.message.includes('vite'))) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return true;
+          }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+          if (e.reason && String(e.reason).includes('WebSocket')) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+          }
+        }, true);
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-blue-600 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="cscGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2b5c"/>
+      <stop offset="50%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Base background with rounded corners -->
+  <rect width="512" height="512" rx="108" fill="url(#cscGrad)"/>
+
+  <!-- Subtle tricolor accent strip on top right -->
+  <path d="M370 32 L480 32 C497 32 505 45 505 60 L505 140 Z" fill="#ff9933" opacity="0.9"/>
+  <path d="M410 32 L495 32 C502 32 505 38 505 45 L505 100 Z" fill="#ffffff" opacity="0.95"/>
+  <path d="M450 32 L490 32 C500 32 505 36 505 42 L505 75 Z" fill="#138808" opacity="0.9"/>
+
+  <!-- Outer Emblem Ring -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="#60a5fa" stroke-width="6" stroke-dasharray="12 12" opacity="0.4"/>
+  <circle cx="256" cy="256" r="172" fill="#0f172a" fill-opacity="0.4" stroke="#ffffff" stroke-width="4" stroke-opacity="0.2"/>
+
+  <!-- Center Kiosk & Digital Emblem -->
+  <!-- Kiosk base/monitor -->
+  <rect x="156" y="140" width="200" height="150" rx="18" fill="#ffffff" filter="url(#shadow)"/>
+  <rect x="168" y="152" width="176" height="114" rx="10" fill="#0f2b5c"/>
+  
+  <!-- Screen contents: Rupee symbol, checkmark, document -->
+  <circle cx="220" cy="210" r="32" fill="#f59e0b" fill-opacity="0.2"/>
+  <text x="220" y="222" font-family="Arial, sans-serif" font-size="34" font-weight="900" fill="#fbbf24" text-anchor="middle">₹</text>
+
+  <!-- Digital checkmark badge -->
+  <circle cx="295" cy="210" r="24" fill="#10b981"/>
+  <path d="M285 210 L292 217 L306 203" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Printer slot / Xerox output sheet -->
+  <path d="M216 290 L296 290 L286 330 L226 330 Z" fill="#94a3b8"/>
+  <rect x="176" y="324" width="160" height="32" rx="8" fill="#334155"/>
+  <!-- Paper sliding out -->
+  <rect x="206" y="340" width="100" height="50" rx="4" fill="#ffffff" filter="url(#shadow)"/>
+  <line x1="218" y1="354" x2="294" y2="354" stroke="#0284c7" stroke-width="4" stroke-linecap="round"/>
+  <line x1="218" y1="366" x2="274" y2="366" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+  <line x1="218" y1="378" x2="284" y2="378" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Floating badges: WhatsApp & e-Sevai -->
+  <g transform="translate(110, 240)">
+    <circle cx="26" cy="26" r="26" fill="#22c55e" filter="url(#shadow)"/>
+    <!-- Phone / chat icon -->
+    <path d="M17 19 C18 16 20 16 22 17 C24 18 25 20 26 21 C27 22 26 24 24 26 C23 27 21 28 20 29 C21 31 23 33 25 35 C27 37 29 39 31 40 C32 39 33 37 34 36 C36 34 38 33 39 34 C40 35 42 36 43 38 C44 40 44 42 41 43 C38 45 35 44 32 42 C27 39 21 33 18 28 C16 25 15 22 17 19 Z" fill="#ffffff" transform="scale(0.85) translate(4, 4)"/>
+  </g>
+
+  <!-- Kiosk text branding -->
+  <text x="256" y="435" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" fill="#ffffff" letter-spacing="2" text-anchor="middle">CSC e-SEVAI</text>
+  <text x="256" y="465" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#93c5fd" letter-spacing="3" text-anchor="middle">DIGITAL SEVA KIOSK</text>
+</svg>
