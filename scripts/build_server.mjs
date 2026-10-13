@@ -7,7 +7,7 @@ await build({
   platform: 'node',
   format: 'cjs',
   outfile: 'server.js',
-  external: ['@whiskeysockets/baileys', 'pino', 'express'],
+  packages: 'external',
   logLevel: 'info',
 });
 
