@@ -305,10 +305,10 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
               const Icon = preset.icon;
               const isSelected = selectedPreset.id === preset.id;
               return (
-                <button
+                <div
                   key={preset.id}
                   onClick={() => handleSelectPreset(preset)}
-                  className={`p-3.5 rounded-2xl text-left transition-all border-2 relative overflow-hidden flex flex-col justify-between ${
+                  className={`p-3.5 rounded-2xl text-left transition-all border-2 relative overflow-hidden flex flex-col justify-between cursor-pointer ${
                     isSelected
                       ? 'border-blue-900 bg-blue-50/80 shadow-md ring-2 ring-blue-900/20'
                       : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
@@ -331,7 +331,31 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
                       {preset.sub}
                     </p>
                   </div>
-                </button>
+
+                  <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400 font-mono">₹{preset.defaultRate} / unit</span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddToCart({
+                          id: 'xerox-' + Date.now(),
+                          name: preset.title,
+                          category: 'xerox',
+                          quantity: 1,
+                          unitPrice: preset.defaultRate,
+                          amount: preset.defaultRate,
+                          details: preset.sub,
+                        });
+                        setAddedAnimation(true);
+                        setTimeout(() => setAddedAnimation(false), 1500);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-900 hover:text-white text-blue-900 text-xs font-bold transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
