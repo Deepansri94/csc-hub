@@ -13,9 +13,13 @@ import {
   User, 
   Calendar,
   Share2,
-  ArrowUpDown
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Invoice } from '../types';
+import { StorageService } from '../services/storageService';
+import { isElectronDesktop, shareViaWhatsApp, getInvoiceWhatsAppText } from '../utils/platform';
 
 interface InvoicesListProps {
   invoices: Invoice[];
@@ -34,6 +38,8 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [modeFilter, setModeFilter] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('all');
+  const [page, setPage] = useState<number>(1);
+  const itemsPerPage = 10;
 
   // Filter logic
   const now = Date.now();
@@ -66,6 +72,26 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
 
     return matchesSearch && matchesStatus && matchesMode && matchesTime;
   });
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredInvoices.length / itemsPerPage));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const isDesktop = isElectronDesktop();
+
+  const handleInvoiceWhatsAppClick = (invoice: Invoice) => {
+    const settings = StorageService.getSettings();
+    const text = getInvoiceWhatsAppText(invoice, settings);
+
+    shareViaWhatsApp({
+      phone: invoice.citizenPhone || '',
+      text,
+      onDesktopAction: () => {
+        onSendWhatsApp(invoice);
+      },
+    });
+  };
 
   // Summary KPIs
   const totalBilled = filteredInvoices.reduce((acc, i) => acc + i.totalAmount, 0);
@@ -170,7 +196,10 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
               type="text"
               placeholder="Search by Citizen Name, Phone, Token #, or Invoice #..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
               className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-blue-900 focus:outline-hidden"
             />
           </div>
@@ -179,7 +208,10 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
           <div className="sm:col-span-2">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
               className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-hidden"
             >
               <option value="all">All Statuses</option>
@@ -193,7 +225,10 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
           <div className="sm:col-span-2">
             <select
               value={modeFilter}
-              onChange={(e) => setModeFilter(e.target.value)}
+              onChange={(e) => {
+                setModeFilter(e.target.value);
+                setPage(1);
+              }}
               className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-hidden"
             >
               <option value="all">All Modes</option>
@@ -207,7 +242,10 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
           <div className="sm:col-span-3">
             <select
               value={timeFilter}
-              onChange={(e) => setTimeFilter(e.target.value)}
+              onChange={(e) => {
+                setTimeFilter(e.target.value);
+                setPage(1);
+              }}
               className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-900 focus:outline-hidden"
             >
               <option value="all">All Time History</option>
@@ -244,7 +282,7 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredInvoices.map((invoice) => (
+                paginatedInvoices.map((invoice) => (
                   <tr key={invoice.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-2">
@@ -329,9 +367,9 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
                       {/* WhatsApp Reminder Button */}
                       {invoice.citizenPhone && (
                         <button
-                          onClick={() => onSendWhatsApp(invoice)}
+                          onClick={() => handleInvoiceWhatsAppClick(invoice)}
                           className="p-1.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition"
-                          title="Send WhatsApp Reminder / Receipt"
+                          title={isDesktop ? "Send via Desktop WhatsApp Hub" : "Share on WhatsApp (Opens wa.me in new tab)"}
                         >
                           <Share2 className="w-4 h-4" />
                         </button>
@@ -354,6 +392,36 @@ export const InvoicesList: React.FC<InvoicesListProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Invoices Pagination Bar */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between p-3.5 border-t border-slate-200 bg-slate-50 text-xs">
+            <span className="text-slate-500 font-medium">
+              Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({filteredInvoices.length} total invoices)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition shadow-2xs"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Prev</span>
+              </button>
+              <span className="text-xs font-mono font-bold px-2 py-1 bg-white border border-slate-200 rounded-md">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition shadow-2xs"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

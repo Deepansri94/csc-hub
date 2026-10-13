@@ -239,59 +239,61 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
               const Icon = preset.icon;
               const isSelected = selectedPreset.id === preset.id;
               return (
-                <button
+                <div
                   key={preset.id}
                   onClick={() => handleSelectPreset(preset)}
-                  className={`p-3.5 rounded-2xl text-left transition-all border-2 relative overflow-hidden flex flex-col justify-between ${
+                  className={`p-3.5 rounded-2xl text-left transition-all border-2 relative overflow-hidden flex flex-col justify-between cursor-pointer group ${
                     isSelected
                       ? 'border-blue-900 bg-blue-50/80 shadow-md ring-2 ring-blue-900/20'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
+                      : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-xs'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${preset.color} text-white flex items-center justify-center shadow-xs`}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex items-center gap-1">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${preset.color} text-white flex items-center justify-center shadow-xs`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
                       <span className="text-xs font-black font-mono text-slate-900 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
                         ₹{preset.defaultRate}
                       </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectPreset(preset);
-                          // We need a slight delay to ensure state update before adding if we were to call handleAdd directly
-                          // Or just trigger the add action directly if we don't care about the UI state updates for other fields
-                          // For simplicity, trigger add with current parameters.
-                          // Ideally: update selectedPreset, then add.
-                          // Let's call the add function.
-                          onAddToCart({
-                            id: 'xerox-' + Date.now(),
-                            name: preset.title,
-                            category: 'xerox',
-                            quantity: 1,
-                            unitPrice: preset.defaultRate,
-                            amount: preset.defaultRate,
-                            details: '1 unit',
-                          });
-                        }}
-                        className="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center hover:bg-blue-800 transition"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
                     </div>
-                  </div>
 
-                  <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-blue-900 transition-colors">
                       {preset.title}
                     </h4>
                     <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
                       {preset.sub}
                     </p>
                   </div>
-                </button>
+
+                  {/* Product Card Action Footer with prominent Add Button */}
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      {preset.size}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectPreset(preset);
+                        onAddToCart({
+                          id: 'xerox-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+                          name: preset.title,
+                          category: 'xerox',
+                          quantity: 1,
+                          unitPrice: preset.defaultRate,
+                          amount: preset.defaultRate,
+                          details: `${preset.title} (1 unit @ ₹${preset.defaultRate})`,
+                        });
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold shadow-xs hover:shadow-sm transition active:scale-95 cursor-pointer"
+                      title={`Add ${preset.title} directly to bill cart`}
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>

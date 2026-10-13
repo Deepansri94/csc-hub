@@ -30,20 +30,21 @@
     },
     "files": [
       "dist/**/*",
-      "server.js",
-      "server/**/*",
       "main.js",
       "preload.js",
       "package.json"
     ],
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis"],
+      "icon": "public/pwa-512x512.png"
     },
-    "mac": {
-      "target": ["dmg", "zip"]
-    },
-    "linux": {
-      "target": ["AppImage", "deb"]
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "CSC-HUB",
+      "artifactName": "${productName}-Setup.${ext}"
     }
   },
   "dependencies": {

@@ -1,0 +1,42 @@
+name: Build Windows Desktop App (.exe)
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Installer (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Web Application
+        run: npm run build
+
+      - name: Build Windows .exe Installer with Electron Builder
+        run: npx electron-builder --win nsis
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows Executable (.exe) Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CSC-HUB-Windows-Setup-exe
+          path: release/*.exe
+          if-no-files-found: error

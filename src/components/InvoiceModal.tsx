@@ -16,6 +16,7 @@ import {
 import { Invoice, KioskSettings } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { isElectronDesktop, shareViaWhatsApp, getInvoiceWhatsAppText } from '../utils/platform';
 
 interface InvoiceModalProps {
   invoice: Invoice | null;
@@ -114,6 +115,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleShareWhatsApp = () => {
+    const text = getInvoiceWhatsAppText(invoice, settings);
+    shareViaWhatsApp({
+      phone: invoice.citizenPhone || '',
+      text,
+      onDesktopAction: () => {
+        if (onSendWhatsAppReminder) {
+          onSendWhatsAppReminder(invoice);
+        }
+      },
+    });
+  };
+
+  const isDesktop = isElectronDesktop();
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4">
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[92vh] border border-slate-200">
@@ -153,16 +169,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               <span>{isGeneratingPdf ? 'Saving...' : 'Save PDF'}</span>
             </button>
 
-            {onSendWhatsAppReminder && (
-              <button
-                onClick={() => onSendWhatsAppReminder(invoice)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-semibold shadow-xs transition"
-                title="Share on WhatsApp"
-              >
-                <Share2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">WhatsApp</span>
-              </button>
-            )}
+            <button
+              onClick={handleShareWhatsApp}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-semibold shadow-xs transition"
+              title={isDesktop ? "Send via Desktop WhatsApp Hub" : "Share via WhatsApp (Opens wa.me in new tab)"}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">WhatsApp</span>
+            </button>
 
             <button
               onClick={onClose}

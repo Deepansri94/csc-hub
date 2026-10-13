@@ -17,6 +17,9 @@ function send(event, payload) {
 
 function startBackendServer() {
   const serverPath = path.join(__dirname, 'server.js');
+  if (!fs.existsSync(serverPath)) {
+    return;
+  }
   serverProcess = spawn('node', [serverPath], {
     env: { ...process.env, PORT: '3001' },
     stdio: 'inherit',

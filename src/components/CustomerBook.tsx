@@ -15,10 +15,13 @@ import {
   Banknote,
   Edit3,
   Trash2,
-  UserCheck
+  UserCheck,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Customer, Transaction, KioskSettings, Operator, CustomerType } from '../types';
 import { StorageService } from '../services/storageService';
+import { isElectronDesktop, shareViaWhatsApp, getCustomerReminderWhatsAppText } from '../utils/platform';
 
 interface CustomerBookProps {
   customers: Customer[];
@@ -74,6 +77,10 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
   const [txDescription, setTxDescription] = useState<string>('');
   const [txPaymentMode, setTxPaymentMode] = useState<'cash' | 'upi'>('cash');
 
+  // Customer Directory Pagination
+  const [customerPage, setCustomerPage] = useState<number>(1);
+  const customersPerPage = 8;
+
   // Filter customers
   const filteredCustomers = customers.filter(
     (c) =>
@@ -81,6 +88,26 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
       c.phone.includes(searchTerm) ||
       (c.address && c.address.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const totalCustomerPages = Math.max(1, Math.ceil(filteredCustomers.length / customersPerPage));
+  const currentCustPage = Math.min(customerPage, totalCustomerPages);
+  const paginatedCustomers = filteredCustomers.slice(
+    (currentCustPage - 1) * customersPerPage,
+    currentCustPage * customersPerPage
+  );
+
+  const isDesktop = isElectronDesktop();
+
+  const handleCustomerWhatsAppReminder = (cust: Customer) => {
+    const text = getCustomerReminderWhatsAppText(cust, settings);
+    shareViaWhatsApp({
+      phone: cust.phone,
+      text,
+      onDesktopAction: () => {
+        onSendWhatsAppReminder(cust);
+      },
+    });
+  };
 
   // Calculate overall Customer Ledger metrics
   const totalOutstandingBalance = customers.reduce((acc, c) => acc + c.balanceDue, 0);
@@ -300,7 +327,10 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                 type="text"
                 placeholder="Search by name, phone, or address..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCustomerPage(1);
+                }}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-900"
               />
             </div>
@@ -313,8 +343,7 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                 <p className="text-xs">No customers found.</p>
               </div>
             ) : (
-              // Simple pagination logic
-              filteredCustomers.map((cust) => {
+              paginatedCustomers.map((cust) => {
                 const isSelected = selectedCustomer?.id === cust.id;
                 return (
                   <div
@@ -385,10 +414,38 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
               })
             )}
           </div>
-          {/* Simple Pagination Control */}
-          <div className="p-2 border-t border-slate-200 text-center text-xs text-slate-500">
-             Showing {Math.min(filteredCustomers.length, 50)} of {filteredCustomers.length}
-          </div>
+
+          {/* Customer Directory Pagination Controls */}
+          {totalCustomerPages > 1 && (
+            <div className="p-2.5 border-t border-slate-200 flex items-center justify-between text-xs bg-slate-50 rounded-b-xl">
+              <span className="text-slate-500 font-medium">
+                Page <strong>{currentCustPage}</strong> of <strong>{totalCustomerPages}</strong> ({filteredCustomers.length} total)
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setCustomerPage((p) => Math.max(1, p - 1))}
+                  disabled={currentCustPage <= 1}
+                  className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition shadow-2xs text-slate-700"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-xs font-mono font-bold px-2 py-0.5 bg-white border border-slate-200 rounded">
+                  {currentCustPage}/{totalCustomerPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCustomerPage((p) => Math.min(totalCustomerPages, p + 1))}
+                  disabled={currentCustPage >= totalCustomerPages}
+                  className="p-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 transition shadow-2xs text-slate-700"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Customer Detailed Ledger & Transactions (7 Cols) */}
@@ -446,9 +503,9 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                     {selectedCustomer.balanceDue > 0 && (
                       <button
                         type="button"
-                        onClick={() => onSendWhatsAppReminder(selectedCustomer)}
+                        onClick={() => handleCustomerWhatsAppReminder(selectedCustomer)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition"
-                        title="Send WhatsApp Payment Reminder"
+                        title={isDesktop ? "Send via Desktop WhatsApp Hub" : "Share Reminder on WhatsApp (Opens wa.me in new tab)"}
                       >
                         <Share2 className="w-3.5 h-3.5" />
                         <span>WhatsApp Reminder</span>

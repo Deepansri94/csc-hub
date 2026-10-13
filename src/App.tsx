@@ -29,6 +29,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { ClientSetupModal } from './components/ClientSetupModal';
 import { ClientSupportModal } from './components/ClientSupportModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { isElectronDesktop, shareViaWhatsApp, getInvoiceWhatsAppText, getCustomerReminderWhatsAppText } from './utils/platform';
 
 export default function App() {
   // Initialize local storage on mount
@@ -105,7 +106,27 @@ export default function App() {
   };
 
   const handleSendWhatsAppReminder = (invoiceOrCustomer: Invoice | Customer) => {
-    // Switch to WhatsApp tab with pre-filled message
+    const isDesktop = isElectronDesktop();
+    if (!isDesktop) {
+      if ('invoiceNumber' in invoiceOrCustomer) {
+        // Invoice sharing on browser
+        const text = getInvoiceWhatsAppText(invoiceOrCustomer, settings);
+        shareViaWhatsApp({
+          phone: invoiceOrCustomer.citizenPhone || '',
+          text,
+        });
+        return;
+      } else {
+        // Customer reminder on browser
+        const text = getCustomerReminderWhatsAppText(invoiceOrCustomer, settings);
+        shareViaWhatsApp({
+          phone: invoiceOrCustomer.phone,
+          text,
+        });
+        return;
+      }
+    }
+    // Switch to WhatsApp tab on desktop
     setActiveTab('whatsapp');
   };
 
