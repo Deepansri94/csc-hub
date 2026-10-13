@@ -28,7 +28,17 @@
       "server/**/*",
       "main.js",
       "preload.js",
-      "package.json"
+      "package.json",
+      "node_modules/**/*",
+      "!node_modules/electron/**/*",
+      "!node_modules/electron-builder/**/*",
+      "!node_modules/esbuild/**/*",
+      "!node_modules/typescript/**/*",
+      "!node_modules/vite/**/*",
+      "!node_modules/@vitejs/**/*",
+      "!node_modules/tsx/**/*",
+      "!node_modules/tailwindcss/**/*",
+      "!node_modules/@tailwindcss/**/*"
     ],
     "win": {
       "target": [
