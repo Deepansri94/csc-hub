@@ -274,7 +274,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 
             {onSendWhatsAppReminder && (
               <button
-                onClick={() => onSendWhatsAppReminder(invoice)}
+                onClick={() => {
+                  const api = (window as any).electronAPI;
+                  const text = `CSC e-Sevai Invoice #${invoice.invoiceNumber}\nCitizen: ${invoice.citizenName}\nAmount: Rs. ${invoice.totalAmount}\nStatus: ${invoice.paymentStatus.toUpperCase()}\nCentre: ${settings.centerName} (${settings.phone})`;
+                  if (api?.openExternal) {
+                    api.openExternal(`https://wa.me/91${invoice.citizenPhone}?text=${encodeURIComponent(text)}`);
+                  } else if (invoice.citizenPhone) {
+                    window.open(`https://wa.me/91${invoice.citizenPhone}?text=${encodeURIComponent(text)}`, '_blank');
+                  } else {
+                    onSendWhatsAppReminder(invoice);
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white text-xs font-semibold shadow-xs transition"
                 title="Share on WhatsApp"
               >

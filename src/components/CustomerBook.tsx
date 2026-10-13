@@ -15,7 +15,9 @@ import {
   Banknote,
   Edit3,
   Trash2,
-  UserCheck
+  UserCheck,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Customer, Transaction, KioskSettings, Operator, CustomerType } from '../types';
 import { StorageService } from '../services/storageService';
@@ -47,6 +49,8 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     customers.length > 0 ? customers[0] : null
   );
+  const [custPage, setCustPage] = useState(1);
+  const CUST_PER_PAGE = 8;
 
   // Modals state
   const [showAddCustomerModal, setShowAddCustomerModal] = useState<boolean>(false);
@@ -81,6 +85,8 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
       c.phone.includes(searchTerm) ||
       (c.address && c.address.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  const totalCustPages = Math.ceil(filteredCustomers.length / CUST_PER_PAGE) || 1;
+  const paginatedCustomers = filteredCustomers.slice((custPage - 1) * CUST_PER_PAGE, custPage * CUST_PER_PAGE);
 
   // Calculate overall Customer Ledger metrics
   const totalOutstandingBalance = customers.reduce((acc, c) => acc + c.balanceDue, 0);
@@ -300,7 +306,7 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                 type="text"
                 placeholder="Search by name, phone, or address..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); setCustPage(1); }}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-900"
               />
             </div>
@@ -313,7 +319,7 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                 <p className="text-xs">No customers found.</p>
               </div>
             ) : (
-              filteredCustomers.map((cust) => {
+              paginatedCustomers.map((cust) => {
                 const isSelected = selectedCustomer?.id === cust.id;
                 return (
                   <div
@@ -384,6 +390,29 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
               })
             )}
           </div>
+
+          {/* Pagination */}
+          {totalCustPages > 1 && (
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+              <span className="text-slate-500">{custPage}/{totalCustPages} • {filteredCustomers.length} customers</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCustPage(p => Math.max(1, p - 1))}
+                  disabled={custPage === 1}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setCustPage(p => Math.min(totalCustPages, p + 1))}
+                  disabled={custPage === totalCustPages}
+                  className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Customer Detailed Ledger & Transactions (7 Cols) */}

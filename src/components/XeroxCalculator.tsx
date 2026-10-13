@@ -137,6 +137,10 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
   const [customRate, setCustomRate] = useState<number>(selectedPreset.defaultRate);
   const [customNote, setCustomNote] = useState<string>('');
   const [addedAnimation, setAddedAnimation] = useState(false);
+  const [customItemName, setCustomItemName] = useState('');
+  const [customItemQty, setCustomItemQty] = useState(1);
+  const [customItemRate, setCustomItemRate] = useState(0);
+  const [customItemAdded, setCustomItemAdded] = useState(false);
 
   // When preset changes, update default rate & paper size
   const handleSelectPreset = (preset: PresetItem) => {
@@ -233,6 +237,68 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
             <Layers className="w-4 h-4 text-blue-800" />
             <span>1. Select Service / Job Type</span>
           </h3>
+
+          {/* Custom Item Row */}
+          <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-3 flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Custom Item Name</label>
+              <input
+                type="text"
+                placeholder="e.g. A3 Printout, Notary Copy"
+                value={customItemName}
+                onChange={(e) => setCustomItemName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-900"
+              />
+            </div>
+            <div className="w-20">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Qty</label>
+              <input
+                type="number"
+                min="1"
+                value={customItemQty}
+                onChange={(e) => setCustomItemQty(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 text-center"
+              />
+            </div>
+            <div className="w-24">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Rate (₹)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={customItemRate || ''}
+                onChange={(e) => setCustomItemRate(parseFloat(e.target.value) || 0)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900"
+              />
+            </div>
+            <div className="shrink-0">
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">Total</label>
+              <span className="block text-xs font-black font-mono text-slate-800 py-1.5">₹{(customItemQty * customItemRate).toFixed(2)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (!customItemName.trim() || customItemRate <= 0) return;
+                onAddToCart({
+                  id: 'custom-' + Date.now(),
+                  name: customItemName.trim(),
+                  category: 'xerox',
+                  quantity: customItemQty,
+                  unitPrice: customItemRate,
+                  amount: customItemQty * customItemRate,
+                  details: '',
+                });
+                setCustomItemAdded(true);
+                setTimeout(() => { setCustomItemAdded(false); setCustomItemName(''); setCustomItemQty(1); setCustomItemRate(0); }, 1500);
+              }}
+              className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
+                customItemAdded ? 'bg-emerald-600 text-white' : 'bg-blue-900 hover:bg-blue-800 text-white'
+              }`}
+            >
+              {customItemAdded ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5 text-amber-400" />}
+              <span>{customItemAdded ? 'Added!' : 'Add Custom Item'}</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {XEROX_PRESETS.map((preset) => {
