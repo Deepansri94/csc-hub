@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, 
   Send, 
@@ -47,10 +47,11 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
 }) => {
   // Desktop Electron WhatsApp Gateway State
   const [gatewayStatus, setGatewayStatus] = useState<{
-    state: 'connected' | 'qr_ready' | 'disconnected' | 'checking';
+    state: 'connected' | 'qr_ready' | 'disconnected' | 'checking' | 'browser_mode';
     hasQr: boolean;
     qr: string;
     phone?: string;
+    isBrowserMode?: boolean;
   }>({ state: 'checking', hasQr: false, qr: '' });
 
   const [isTestingGateway, setIsTestingGateway] = useState<boolean>(false);
@@ -66,6 +67,7 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
           hasQr: !!data.hasQr,
           qr: data.qr || '',
           phone: data.phone,
+          isBrowserMode: !!data.isBrowserMode,
         });
       } else {
         setGatewayStatus(prev => ({ ...prev, state: 'disconnected' }));
@@ -127,9 +129,18 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
   const paginatedLogs = logs.slice((logsPage - 1) * itemsPerPage, logsPage * itemsPerPage);
   const totalLogPages = Math.ceil(logs.length / itemsPerPage) || 1;
 
+  const openWhatsAppUrl = (url: string) => {
+    const api = (window as any).electronAPI;
+    if (api?.openExternal) {
+      api.openExternal(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
   const handleDirectWhatsAppSend = (phone: string, text: string) => {
     const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    openWhatsAppUrl(url);
     
     const log: MessageLog = {
       id: 'msg-' + Date.now() + Math.random().toString(36).substring(2, 6),
@@ -167,7 +178,7 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
 
     if (!sentSilently) {
       const url = `https://wa.me/91${phone}?text=${encodeURIComponent(finalMsg)}`;
-      window.open(url, '_blank');
+      openWhatsAppUrl(url);
     }
 
     const log: MessageLog = {
@@ -274,7 +285,7 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
     if (targetCustomers.length > 0) {
       const firstCust = targetCustomers[0];
       const url = `https://wa.me/91${firstCust.phone}?text=${encodeURIComponent(finalBulkText)}`;
-      window.open(url, '_blank');
+      openWhatsAppUrl(url);
     }
 
     alert(`📋 Logged broadcast for ${targetCustomers.length} customers! Opening WhatsApp chat with the first recipient (+91 ${targetCustomers[0]?.phone}) to send via your active account.`);
@@ -343,6 +354,22 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Browser Mode Warning Banner */}
+      {gatewayStatus.isBrowserMode && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+            <Smartphone className="w-4 h-4 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-sm font-black text-amber-900">WhatsApp Gateway — Desktop App Only</p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              The silent Baileys WhatsApp engine is <strong>not available in the web browser</strong>. It only runs inside the installed <strong>CSC-HUB Desktop (Electron) app</strong>.
+              In browser mode, all send buttons will open <strong>wa.me</strong> links in a new tab instead.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Sub tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
@@ -1073,11 +1100,11 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
                       setGatewayTestResult('✅ Test message dispatched silently via Electron background engine!');
                     } else {
                       setGatewayTestResult(`⚠️ Gateway returned: ${data.error || 'Opening WhatsApp Web fallback...'}`);
-                      window.open(`https://wa.me/91${phone}?text=CSC%20Desktop%20Test`, '_blank');
+                      openWhatsAppUrl(`https://wa.me/91${phone}?text=CSC%20Desktop%20Test`);
                     }
                   } catch (e: any) {
                     setGatewayTestResult('ℹ️ Engine offline. Opening standard desktop WhatsApp Web fallback.');
-                    window.open(`https://wa.me/91${phone}?text=CSC%20Desktop%20Test`, '_blank');
+                    openWhatsAppUrl(`https://wa.me/91${phone}?text=CSC%20Desktop%20Test`);
                   } finally {
                     setIsTestingGateway(false);
                   }

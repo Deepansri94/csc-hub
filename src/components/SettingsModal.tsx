@@ -10,9 +10,12 @@ import {
   Database,
   Plus,
   Trash2,
-  Tag
+  Tag,
+  Users,
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { KioskSettings, ServiceCatalogItem } from '../types';
+import { KioskSettings, ServiceCatalogItem, Operator } from '../types';
 import { StorageService } from '../services/storageService';
 
 interface SettingsModalProps {
@@ -27,10 +30,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onUpdateSettings,
 }) => {
   const [formData, setFormData] = useState<KioskSettings>(settings);
-  const [activeTab, setActiveTab] = useState<'profile' | 'services' | 'upi' | 'backup'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'operators' | 'services' | 'upi' | 'backup'>('profile');
   const [backupJson, setBackupJson] = useState<string>('');
   const [importSuccess, setImportSuccess] = useState<boolean>(false);
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
+
+  const [operatorsList, setOperatorsList] = useState<Operator[]>(StorageService.getOperators());
+  const [showPins, setShowPins] = useState<Record<string, boolean>>({});
+  const [opSaved, setOpSaved] = useState(false);
 
   const [servicesList, setServicesList] = useState<ServiceCatalogItem[]>(StorageService.getServices());
   const [updateStatus, setUpdateStatus] = useState<string>('');
@@ -183,11 +190,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
           {[
             { id: 'profile', label: 'Center Profile' },
+            { id: 'operators', label: 'Operators & PINs' },
             { id: 'services', label: 'Services & Product Pricing' },
             { id: 'upi', label: 'UPI & QR Config' },
             { id: 'backup', label: 'Offline Backup & Restore' },
           ].map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-4 py-2 text-xs font-bold ${activeTab === tab.id ? 'border-b-2 border-blue-900 bg-white' : ''}`}>
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`px-4 py-2 text-xs font-bold whitespace-nowrap ${activeTab === tab.id ? 'border-b-2 border-blue-900 bg-white' : ''}`}>
               {tab.label.toUpperCase()}
             </button>
           ))}
@@ -246,6 +254,146 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {savedSuccess && <span className="text-emerald-700 font-bold">Saved successfully!</span>}
               </div>
             </form>
+          )}
+
+          {activeTab === 'operators' && (
+            <div className="space-y-4 text-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-black text-sm text-slate-900">Operators & Security PINs</h4>
+                  <p className="text-slate-500 mt-0.5">Set name, role, and 4-digit PIN for each operator.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newOp: Operator = {
+                      id: 'op-' + Date.now(),
+                      name: 'New Operator',
+                      role: 'operator',
+                      pin: '0000',
+                      phone: '',
+                      isActive: true,
+                    };
+                    const updated = [...operatorsList, newOp];
+                    setOperatorsList(updated);
+                    StorageService.saveOperators(updated);
+                  }}
+                  className="px-3 py-1.5 bg-blue-900 text-white rounded-lg font-bold flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Operator
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {operatorsList.map((op) => (
+                  <div key={op.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Full Name</label>
+                        <input
+                          type="text"
+                          value={op.name}
+                          onChange={(e) => {
+                            const updated = operatorsList.map(o => o.id === op.id ? { ...o, name: e.target.value } : o);
+                            setOperatorsList(updated);
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-900 font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Mobile Number</label>
+                        <input
+                          type="tel"
+                          value={op.phone}
+                          onChange={(e) => {
+                            const updated = operatorsList.map(o => o.id === op.id ? { ...o, phone: e.target.value.replace(/\D/g, '') } : o);
+                            setOperatorsList(updated);
+                          }}
+                          maxLength={10}
+                          placeholder="10-digit mobile"
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 font-mono text-slate-900"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">Role</label>
+                        <select
+                          value={op.role}
+                          onChange={(e) => {
+                            const updated = operatorsList.map(o => o.id === op.id ? { ...o, role: e.target.value as 'admin' | 'operator' } : o);
+                            setOperatorsList(updated);
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-slate-900 font-bold"
+                        >
+                          <option value="admin">Admin</option>
+                          <option value="operator">Operator</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">4-Digit PIN</label>
+                        <div className="relative">
+                          <input
+                            type={showPins[op.id] ? 'text' : 'password'}
+                            value={op.pin}
+                            maxLength={4}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                              const updated = operatorsList.map(o => o.id === op.id ? { ...o, pin: val } : o);
+                              setOperatorsList(updated);
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 font-mono text-slate-900 font-bold pr-8"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPins(prev => ({ ...prev, [op.id]: !prev[op.id] }))}
+                            className="absolute right-2 top-1.5 text-slate-400 hover:text-slate-700"
+                          >
+                            {showPins[op.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (operatorsList.length <= 1) { alert('At least one operator is required.'); return; }
+                            if (!window.confirm(`Remove operator "${op.name}"?`)) return;
+                            const updated = operatorsList.filter(o => o.id !== op.id);
+                            setOperatorsList(updated);
+                            StorageService.saveOperators(updated);
+                          }}
+                          className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700"
+                          title="Remove operator"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const invalid = operatorsList.find(o => !o.name.trim() || o.pin.length !== 4);
+                    if (invalid) { alert('All operators must have a name and a 4-digit PIN.'); return; }
+                    StorageService.saveOperators(operatorsList);
+                    setOpSaved(true);
+                    setTimeout(() => setOpSaved(false), 2000);
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-bold shadow-sm"
+                >
+                  Save Operators
+                </button>
+                {opSaved && <span className="text-emerald-700 font-bold">Saved successfully!</span>}
+              </div>
+            </div>
           )}
 
           {activeTab === 'services' && (

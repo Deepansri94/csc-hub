@@ -31,9 +31,25 @@
 
 /* Print styling for POS receipts and A4 invoices */
 @media print {
-  body {
+  /* Hide everything by default */
+  body > * {
+    display: none !important;
+  }
+
+  /* Show only the invoice sheet */
+  .print-invoice-sheet {
+    display: block !important;
+    position: fixed !important;
+    inset: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 16px !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     background: white !important;
     color: black !important;
+    z-index: 99999 !important;
   }
 
   .no-print {
@@ -42,14 +58,5 @@
 
   .print-only {
     display: block !important;
-  }
-
-  .print-invoice-sheet {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
   }
 }

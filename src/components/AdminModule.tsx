@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Shield, 
   Users, 
@@ -82,6 +82,21 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
   const [patchNotes, setPatchNotes] = useState<string>('Standard system repair and configuration update');
   const [includeCatalogInPatch, setIncludeCatalogInPatch] = useState<boolean>(true);
   const [resetHwidInPatch, setResetHwidInPatch] = useState<boolean>(false);
+
+  // Release files state
+  const [releaseFiles, setReleaseFiles] = useState<{ name: string; url: string; size: number; builtAt: string }[]>([]);
+  const [releasesLoading, setReleasesLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'distribution') {
+      setReleasesLoading(true);
+      fetch('/api/releases/latest')
+        .then(r => r.json())
+        .then(d => setReleaseFiles(d.files || []))
+        .catch(() => setReleaseFiles([]))
+        .finally(() => setReleasesLoading(false));
+    }
+  }, [activeTab]);
 
   // Copy helper
   const handleCopy = (text: string, id: string) => {
@@ -869,6 +884,77 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
               <li>User imports the <strong>Master Pricing Catalog JSON</strong> to get all updated Xerox & e-District rates.</li>
               <li>At the end of day/week, user exports their <strong>Backup JSON</strong> and submits it to Admin for auditing.</li>
             </ol>
+          </div>
+
+          {/* Built Installer Downloads */}
+          <div className="border border-slate-200 rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-black text-slate-900 text-sm flex items-center gap-2">
+                  <Download className="w-4 h-4 text-emerald-600" />
+                  Built Installer Downloads
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Files built via <code className="bg-slate-100 px-1 rounded">npm run electron:build</code> and served from the <code className="bg-slate-100 px-1 rounded">release/</code> folder.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setReleasesLoading(true);
+                  fetch('/api/releases/latest')
+                    .then(r => r.json())
+                    .then(d => setReleaseFiles(d.files || []))
+                    .catch(() => setReleaseFiles([]))
+                    .finally(() => setReleasesLoading(false));
+                }}
+                className="p-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition"
+                title="Refresh"
+              >
+                <RefreshCw className={`w-4 h-4 ${releasesLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            {releasesLoading ? (
+              <div className="py-6 text-center text-xs text-slate-400">Scanning release folder...</div>
+            ) : releaseFiles.length === 0 ? (
+              <div className="py-6 text-center space-y-2 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <p className="text-xs font-bold text-slate-600">No installer files found yet.</p>
+                <p className="text-[11px] text-slate-400">
+                  Run <code className="bg-slate-100 px-1.5 py-0.5 rounded font-mono">npm run electron:build</code> to generate the installer, then refresh.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {releaseFiles.map(f => {
+                  const isExe = f.name.endsWith('.exe');
+                  const isAppImage = f.name.endsWith('.AppImage');
+                  const isDmg = f.name.endsWith('.dmg');
+                  const icon = isExe ? '🪟' : isAppImage ? '🐧' : isDmg ? '🍎' : '📦';
+                  const sizeMb = (f.size / (1024 * 1024)).toFixed(1);
+                  return (
+                    <div key={f.name} className="py-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{icon}</span>
+                        <div>
+                          <p className="font-bold text-sm text-slate-900">{f.name}</p>
+                          <p className="text-[11px] text-slate-500">
+                            {sizeMb} MB &nbsp;•&nbsp; Built {new Date(f.builtAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={f.url}
+                        download={f.name}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

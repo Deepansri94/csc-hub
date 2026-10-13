@@ -10,65 +10,71 @@ let qrCodeData = '';
 let connectionState = 'disconnected';
 let reconnectAttempts = 0;
 
-const authDir = path.join(process.env.HOME || '/tmp', '.csc_whatsapp_auth');
+// Detect if running inside Electron (desktop) or plain browser/web server
+const isElectronRuntime = typeof process !== 'undefined' && process.versions?.electron;
+const authDir = path.join(process.env.HOME || process.env.USERPROFILE || '/tmp', '.csc_whatsapp_auth');
 
 export async function initWhatsAppServer(app: express.Application) {
-  try {
-    if (!fs.existsSync(authDir)) {
-      fs.mkdirSync(authDir, { recursive: true });
-    }
-
-    const { state, saveCreds } = await useMultiFileAuthState(authDir);
-
-    async function connectToWhatsApp() {
-      try {
-        sock = makeWASocket({
-          auth: state,
-          printQRInTerminal: false,
-          logger: pino({ level: 'silent' }),
-        });
-
-        sock.ev.on('creds.update', saveCreds);
-
-        sock.ev.on('connection.update', (update: any) => {
-          const { connection, lastDisconnect, qr } = update;
-          if (qr) {
-            qrCodeData = qr;
-            connectionState = 'qr_ready';
-            reconnectAttempts = 0;
-            console.log('[WhatsApp] QR Code generated successfully.');
-          }
-          if (connection === 'close') {
-            connectionState = 'disconnected';
-            const statusCode = lastDisconnect?.error?.output?.statusCode;
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut && reconnectAttempts < 5;
-            
-            if (shouldReconnect) {
-              reconnectAttempts++;
-              const delay = Math.min(reconnectAttempts * 3000, 15000);
-              console.log(`[WhatsApp] Connection closed. Reconnecting in ${delay/1000}s (attempt ${reconnectAttempts})...`);
-              setTimeout(() => {
-                connectToWhatsApp().catch(() => {});
-              }, delay);
-            } else {
-              console.log('[WhatsApp] Connection suspended or logged out. Falling back to wa.me direct links.');
-            }
-          } else if (connection === 'open') {
-            connectionState = 'connected';
-            qrCodeData = '';
-            reconnectAttempts = 0;
-            console.log('[WhatsApp] Connected successfully to WhatsApp network!');
-          }
-        });
-      } catch (err: any) {
-        console.warn('[WhatsApp] Connection warning:', err?.message || err);
+  if (!isElectronRuntime) {
+    console.log('[WhatsApp] ℹ️  Running in Web/Browser mode. Baileys WhatsApp gateway is only available in the Desktop Electron app. Skipping connection.');
+    connectionState = 'browser_mode';
+  } else {
+    try {
+      if (!fs.existsSync(authDir)) {
+        fs.mkdirSync(authDir, { recursive: true });
       }
-    }
 
-    // Start connection attempt in background safely
-    connectToWhatsApp().catch(() => {});
-  } catch (err: any) {
-    console.warn('[WhatsApp] Service initialization notice:', err?.message || err);
+      const { state, saveCreds } = await useMultiFileAuthState(authDir);
+
+      async function connectToWhatsApp() {
+        try {
+          sock = makeWASocket({
+            auth: state,
+            printQRInTerminal: false,
+            logger: pino({ level: 'silent' }),
+          });
+
+          sock.ev.on('creds.update', saveCreds);
+
+          sock.ev.on('connection.update', (update: any) => {
+            const { connection, lastDisconnect, qr } = update;
+            if (qr) {
+              qrCodeData = qr;
+              connectionState = 'qr_ready';
+              reconnectAttempts = 0;
+              console.log('[WhatsApp] QR Code generated successfully.');
+            }
+            if (connection === 'close') {
+              connectionState = 'disconnected';
+              const statusCode = lastDisconnect?.error?.output?.statusCode;
+              const shouldReconnect = statusCode !== DisconnectReason.loggedOut && reconnectAttempts < 5;
+
+              if (shouldReconnect) {
+                reconnectAttempts++;
+                const delay = Math.min(reconnectAttempts * 3000, 15000);
+                console.log(`[WhatsApp] Connection closed. Reconnecting in ${delay / 1000}s (attempt ${reconnectAttempts})...`);
+                setTimeout(() => {
+                  connectToWhatsApp().catch(() => {});
+                }, delay);
+              } else {
+                console.log('[WhatsApp] Connection suspended or logged out. Falling back to wa.me direct links.');
+              }
+            } else if (connection === 'open') {
+              connectionState = 'connected';
+              qrCodeData = '';
+              reconnectAttempts = 0;
+              console.log('[WhatsApp] Connected successfully to WhatsApp network!');
+            }
+          });
+        } catch (err: any) {
+          console.warn('[WhatsApp] Connection warning:', err?.message || err);
+        }
+      }
+
+      connectToWhatsApp().catch(() => {});
+    } catch (err: any) {
+      console.warn('[WhatsApp] Service initialization notice:', err?.message || err);
+    }
   }
 
   // Status endpoint
@@ -78,11 +84,19 @@ export async function initWhatsAppServer(app: express.Application) {
       state: connectionState,
       hasQr: !!qrCodeData,
       qr: qrCodeData,
+      isBrowserMode: connectionState === 'browser_mode',
     });
   });
 
   // Send message endpoint
   router.post('/send', async (req, res) => {
+    if (connectionState === 'browser_mode') {
+      return res.status(503).json({
+        success: false,
+        error: 'WhatsApp gateway is only available in the Desktop Electron app. Use wa.me links instead.',
+      });
+    }
+
     if (connectionState !== 'connected' || !sock) {
       return res.status(503).json({
         success: false,

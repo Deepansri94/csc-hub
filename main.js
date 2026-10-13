@@ -18,7 +18,7 @@ function send(event, payload) {
 function startBackendServer() {
   const serverPath = path.join(__dirname, 'server.js');
   serverProcess = spawn('node', [serverPath], {
-    env: { ...process.env, PORT: '3001' },
+    env: { ...process.env, PORT: '3000' },
     stdio: 'inherit',
   });
 
@@ -59,35 +59,46 @@ function checkForUpdate(manual = false) {
     res.on('end', () => {
       try {
         const release = JSON.parse(data);
-        const tag = release.tag_name || '';
-        if (!tag.includes('build') && !tag.includes('v')) {
+        const tag = (release.tag_name || '').replace(/^v/, '');
+        const localVersion = app.getVersion();
+
+        // Extract the short SHA from build versions like "1.0.0-build.abc1234"
+        const remoteShort = tag.split('.').pop() || '';
+        const localShort = localVersion.split('.').pop() || '';
+
+        const isNewer = tag !== localVersion && remoteShort !== localShort;
+
+        if (!isNewer) {
           if (manual) send('update-result', { status: 'up-to-date' });
           return;
         }
-        
-        const remoteVersion = tag.replace('v', '').replace('build-', '');
-        const localVersion = app.getVersion();
 
-        // Prompt user
-        const asset = (release.assets || []).find(a => a.name.endsWith('.exe') || a.name.endsWith('.dmg') || a.name.endsWith('.AppImage'));
-        
+        const asset = (release.assets || []).find(
+          a => a.name.endsWith('.exe') || a.name.endsWith('.dmg') || a.name.endsWith('.AppImage')
+        );
+
+        if (!asset) {
+          if (manual) send('update-result', { status: 'up-to-date' });
+          return;
+        }
+
+        if (manual) send('update-result', { status: 'available', version: release.name || tag });
+
         dialog.showMessageBox(mainWindow, {
           type: 'info',
           title: 'Update Available',
           message: `CSC Kiosk ${release.name || tag} is available!`,
-          detail: 'Would you like to download the installer to your Downloads folder and update?',
+          detail: `Your version: ${localVersion}\nNew version: ${tag}\n\nDownload and install the update now?`,
           buttons: ['Download & Install', 'Later'],
           defaultId: 0,
           cancelId: 1,
         }).then(({ response }) => {
-          if (response === 0 && asset) {
+          if (response === 0) {
             downloadAndOpen(asset.browser_download_url, manual);
           } else if (manual) {
             send('update-result', { status: 'cancelled' });
           }
         });
-
-        if (manual) send('update-result', { status: 'available', version: release.name || tag });
       } catch {
         if (manual) send('update-result', { status: 'error' });
       }
@@ -132,6 +143,11 @@ function getHardwareId() {
 
 ipcMain.handle('check-update', () => checkForUpdate(true));
 ipcMain.handle('get-hardware-id', () => getHardwareId());
+ipcMain.handle('open-external', (_, url) => {
+  if (typeof url === 'string' && (url.startsWith('https://wa.me/') || url.startsWith('https://api.qrserver.com/'))) {
+    shell.openExternal(url);
+  }
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({

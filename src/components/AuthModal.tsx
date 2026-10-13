@@ -103,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             <p className="text-[10px] text-slate-400 text-center mt-1">
-              (Demo Default: Admin PIN is <strong>1234</strong>, Staff PIN is <strong>0000</strong>)
+              Enter your assigned 4-digit security PIN.
             </p>
           </div>
 

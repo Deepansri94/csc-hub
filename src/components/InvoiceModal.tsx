@@ -1,13 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   Printer, 
   Download, 
   Share2, 
   CheckCircle2, 
-  AlertCircle, 
   QrCode, 
-  Building2, 
   Phone, 
   Clock, 
   Copy, 
@@ -15,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Invoice, KioskSettings } from '../types';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface InvoiceModalProps {
   invoice: Invoice | null;
@@ -32,7 +29,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
   onMarkPaid,
   onSendWhatsAppReminder,
 }) => {
-  const printRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -72,31 +68,154 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
     window.print();
   };
 
-  const handleDownloadPdf = async () => {
-    if (!printRef.current) return;
+  const handleDownloadPdf = () => {
     try {
       setIsGeneratingPdf(true);
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const W = 210;
+      const margin = 14;
+      const col2 = W / 2 + 2;
+      let y = 14;
+
+      const line = (x1: number, y1: number, x2: number, y2: number, w = 0.3) => {
+        pdf.setLineWidth(w); pdf.line(x1, y1, x2, y2);
+      };
+      const text = (t: string, x: number, yPos: number, opts?: any) => {
+        pdf.text(t, x, yPos, opts);
+      };
+
+      // ── Header ──
+      pdf.setFillColor(30, 41, 82);
+      pdf.rect(margin, y, W - margin * 2, 18, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(13); pdf.setFont('helvetica', 'bold');
+      text(settings.centerName, margin + 3, y + 7);
+      pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+      text(`${settings.address}, ${settings.district} - ${settings.pincode}`, margin + 3, y + 12);
+      text(`CSC ID: ${settings.cscId}  |  Ph: ${settings.phone}`, margin + 3, y + 16);
+      // Token badge
+      pdf.setFillColor(245, 158, 11);
+      pdf.roundedRect(W - margin - 22, y + 1, 22, 16, 2, 2, 'F');
+      pdf.setTextColor(30, 41, 82);
+      pdf.setFontSize(7); pdf.setFont('helvetica', 'bold');
+      text('TOKEN', W - margin - 11, y + 6, { align: 'center' });
+      pdf.setFontSize(14);
+      text(`#${invoice.tokenNumber}`, W - margin - 11, y + 14, { align: 'center' });
+      y += 22;
+
+      // ── Invoice meta row ──
+      pdf.setTextColor(60, 60, 60);
+      pdf.setFontSize(8); pdf.setFont('helvetica', 'normal');
+      text(`Invoice: ${invoice.invoiceNumber}`, margin, y + 5);
+      text(`Date: ${new Date(invoice.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}  ${new Date(invoice.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`, margin, y + 10);
+      text(`Operator: ${invoice.operatorName}`, margin, y + 15);
+      pdf.setFont('helvetica', 'bold');
+      text(`Citizen: ${invoice.citizenName}`, col2, y + 5);
+      pdf.setFont('helvetica', 'normal');
+      text(`Phone: +91 ${invoice.citizenPhone || 'N/A'}`, col2, y + 10);
+      if (invoice.citizenAadhaarLast4) text(`Aadhaar: XXXX-XXXX-${invoice.citizenAadhaarLast4}`, col2, y + 15);
+      y += 20;
+      line(margin, y, W - margin, y, 0.5);
+      y += 4;
+
+      // ── Items table ──
+      pdf.setFillColor(241, 245, 249);
+      pdf.rect(margin, y, W - margin * 2, 7, 'F');
+      pdf.setTextColor(30, 41, 82); pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
+      text('#', margin + 1, y + 5);
+      text('Service / Item Description', margin + 7, y + 5);
+      text('Qty', W - 50, y + 5, { align: 'right' });
+      text('Rate', W - 35, y + 5, { align: 'right' });
+      text('Amount', W - margin, y + 5, { align: 'right' });
+      y += 9;
+
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(40, 40, 40);
+      invoice.items.forEach((item, idx) => {
+        if (y > 260) { pdf.addPage(); y = 14; }
+        pdf.setFontSize(8);
+        text(`${idx + 1}`, margin + 1, y);
+        const nameLines = pdf.splitTextToSize(item.name, 90);
+        pdf.text(nameLines, margin + 7, y);
+        if (item.details) {
+          pdf.setFontSize(7); pdf.setTextColor(120, 120, 120);
+          pdf.text(pdf.splitTextToSize(item.details, 90), margin + 7, y + nameLines.length * 4);
+          pdf.setFontSize(8); pdf.setTextColor(40, 40, 40);
+        }
+        text(`${item.quantity}`, W - 50, y, { align: 'right' });
+        text(`Rs.${item.unitPrice.toFixed(2)}`, W - 35, y, { align: 'right' });
+        pdf.setFont('helvetica', 'bold');
+        text(`Rs.${item.amount.toFixed(2)}`, W - margin, y, { align: 'right' });
+        pdf.setFont('helvetica', 'normal');
+        y += Math.max(nameLines.length * 4 + (item.details ? 5 : 0), 7);
+        line(margin, y - 1, W - margin, y - 1, 0.1);
       });
+      y += 2;
+      line(margin, y, W - margin, y, 0.5);
+      y += 5;
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
+      // ── Totals ──
+      const totalsX = W - margin - 55;
+      pdf.setFontSize(8); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(60, 60, 60);
+      text('Subtotal:', totalsX, y); text(`Rs.${invoice.subtotal.toFixed(2)}`, W - margin, y, { align: 'right' }); y += 5;
+      if (invoice.discount > 0) {
+        pdf.setTextColor(5, 150, 105);
+        text('Discount:', totalsX, y); text(`-Rs.${invoice.discount.toFixed(2)}`, W - margin, y, { align: 'right' });
+        pdf.setTextColor(60, 60, 60); y += 5;
+      }
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.setTextColor(30, 41, 82);
+      text('Grand Total:', totalsX, y); text(`Rs.${invoice.totalAmount.toFixed(2)}`, W - margin, y, { align: 'right' }); y += 6;
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(60, 60, 60);
+      text('Amount Paid:', totalsX, y); text(`Rs.${invoice.paidAmount.toFixed(2)}`, W - margin, y, { align: 'right' }); y += 5;
+      if (invoice.balanceDue > 0) {
+        pdf.setTextColor(220, 38, 38); pdf.setFont('helvetica', 'bold');
+        text('Balance Due:', totalsX, y); text(`Rs.${invoice.balanceDue.toFixed(2)}`, W - margin, y, { align: 'right' });
+        pdf.setTextColor(60, 60, 60); pdf.setFont('helvetica', 'normal'); y += 5;
+      }
 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      // Payment status badge
+      const statusColor = invoice.paymentStatus === 'paid' ? [5, 150, 105] : invoice.paymentStatus === 'partial' ? [217, 119, 6] : [220, 38, 38];
+      pdf.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+      pdf.roundedRect(margin, y, 50, 7, 1.5, 1.5, 'F');
+      pdf.setTextColor(255, 255, 255); pdf.setFontSize(8); pdf.setFont('helvetica', 'bold');
+      const statusLabel = invoice.paymentStatus === 'paid' ? `PAID (${invoice.paymentMode.toUpperCase()})` : invoice.paymentStatus === 'partial' ? `PARTIAL` : 'UNPAID / CREDIT';
+      text(statusLabel, margin + 25, y + 4.5, { align: 'center' });
+      y += 10;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(pdfHeight, 297));
+      // UPI ID
+      pdf.setTextColor(60, 60, 60); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8);
+      text(`UPI: ${settings.upiId}  (GPay / PhonePe / Paytm / BHIM)`, margin, y); y += 5;
+
+      // Amount in words
+      pdf.setFontSize(8); pdf.setFont('helvetica', 'italic'); pdf.setTextColor(80, 80, 80);
+      text(`Amount in Words: ${inWords(invoice.totalAmount)}`, margin, y); y += 5;
+
+      // Remarks
+      if (invoice.notes) {
+        pdf.setFont('helvetica', 'normal');
+        text(`Remarks: ${invoice.notes}`, margin, y); y += 5;
+      }
+
+      // ── Footer ──
+      line(margin, y + 2, W - margin, y + 2, 0.3);
+      y += 6;
+      pdf.setFontSize(7.5); pdf.setFont('helvetica', 'normal'); pdf.setTextColor(100, 100, 100);
+      const footerLines = pdf.splitTextToSize(settings.invoiceFooterNote || '', W - margin * 2 - 50);
+      pdf.text(footerLines, margin, y);
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(30, 41, 82);
+      text(`VLE: ${settings.vleName}`, margin, y + footerLines.length * 4 + 2);
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(120, 120, 120); pdf.setFontSize(7);
+      text('System Generated e-Sevai Kiosk Receipt', margin, y + footerLines.length * 4 + 7);
+      // Signature block
+      line(W - margin - 45, y + 12, W - margin, y + 12, 0.3);
+      pdf.setFontSize(7.5); pdf.setTextColor(60, 60, 60); pdf.setFont('helvetica', 'bold');
+      text(settings.centerName, W - margin - 22, y + 16, { align: 'center' });
+      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(120, 120, 120);
+      text('Authorized Seal / Signature', W - margin - 22, y + 20, { align: 'center' });
+
       pdf.save(`CSC_Invoice_${invoice.invoiceNumber}.pdf`);
     } catch (err) {
       console.error('Failed to generate PDF:', err);
+      alert('PDF generation failed. Please use the Print button instead.');
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -176,7 +295,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
         {/* Printable Invoice Sheet Container */}
         <div className="overflow-y-auto p-4 sm:p-8 bg-slate-100 flex justify-center">
           <div
-            ref={printRef}
             className="print-invoice-sheet bg-white w-full max-w-2xl p-6 sm:p-8 rounded-xl shadow-lg border border-slate-300 text-slate-900 relative"
           >
             {/* Header of Invoice */}
@@ -354,6 +472,13 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
               <div className="mt-3 text-[11px] text-slate-600 italic bg-blue-50/60 px-3 py-1.5 rounded-lg border border-blue-100">
                 <strong>Amount in Words:</strong> {inWords(invoice.totalAmount)}
               </div>
+
+              {/* Remarks / Notes */}
+              {invoice.notes && (
+                <div className="mt-2 text-[11px] text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                  <strong>Remarks:</strong> {invoice.notes}
+                </div>
+              )}
             </div>
 
             {/* Footer declaration and VLE sign */}
