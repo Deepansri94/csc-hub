@@ -44,7 +44,8 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "CSC-HUB",
-      "artifactName": "${productName}-Setup.${ext}"
+      "artifactName": "${productName}-Setup.${ext}",
+      "differentialPackage": false
     }
   },
   "dependencies": {
@@ -76,5 +77,9 @@
     "tsx": "^4.21.0",
     "typescript": "^7.0.2",
     "vite-plugin-pwa": "^2.0.0"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-win32-x64-msvc": "1.2.13",
+    "@rolldown/binding-linux-x64-gnu": "1.2.13"
   }
 }

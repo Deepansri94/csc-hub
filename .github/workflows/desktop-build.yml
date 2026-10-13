@@ -21,10 +21,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
+
+      - name: Ensure Windows Rolldown Native Binding
+        run: npm install @rolldown/binding-win32-x64-msvc@1.2.13 --no-save --legacy-peer-deps
 
       - name: Build Web Application
         run: npm run build
