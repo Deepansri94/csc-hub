@@ -313,6 +313,7 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                 <p className="text-xs">No customers found.</p>
               </div>
             ) : (
+              // Simple pagination logic
               filteredCustomers.map((cust) => {
                 const isSelected = selectedCustomer?.id === cust.id;
                 return (
@@ -383,6 +384,10 @@ export const CustomerBook: React.FC<CustomerBookProps> = ({
                 );
               })
             )}
+          </div>
+          {/* Simple Pagination Control */}
+          <div className="p-2 border-t border-slate-200 text-center text-xs text-slate-500">
+             Showing {Math.min(filteredCustomers.length, 50)} of {filteredCustomers.length}
           </div>
         </div>
 

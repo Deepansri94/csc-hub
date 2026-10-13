@@ -37,7 +37,7 @@
       "package.json"
     ],
     "win": {
-      "target": ["nsis", "portable"]
+      "target": ["nsis"]
     },
     "mac": {
       "target": ["dmg", "zip"]

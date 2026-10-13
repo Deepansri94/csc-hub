@@ -128,8 +128,19 @@ export const WhatsAppHub: React.FC<WhatsAppHubProps> = ({
   const totalLogPages = Math.ceil(logs.length / itemsPerPage) || 1;
 
   const handleDirectWhatsAppSend = (phone: string, text: string) => {
-    const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    // Detect if we are on browser or desktop (simple check: Electron usually has window.electron or similar, here we check userAgent)
+    const isDesktop = navigator.userAgent.toLowerCase().includes('electron');
+    
+    if (isDesktop) {
+      // For desktop, we could trigger a local handler.
+      // For now, let's keep it simple: fallback to new tab to be safe.
+      const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    } else {
+      // Browser: wa.me in new tab
+      const url = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
     
     const log: MessageLog = {
       id: 'msg-' + Date.now() + Math.random().toString(36).substring(2, 6),

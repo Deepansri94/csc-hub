@@ -252,9 +252,35 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
                     <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${preset.color} text-white flex items-center justify-center shadow-xs`}>
                       <Icon className="w-5 h-5" />
                     </div>
-                    <span className="text-xs font-black font-mono text-slate-900 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
-                      ₹{preset.defaultRate}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs font-black font-mono text-slate-900 bg-white px-2 py-0.5 rounded-full border border-slate-200 shadow-2xs">
+                        ₹{preset.defaultRate}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectPreset(preset);
+                          // We need a slight delay to ensure state update before adding if we were to call handleAdd directly
+                          // Or just trigger the add action directly if we don't care about the UI state updates for other fields
+                          // For simplicity, trigger add with current parameters.
+                          // Ideally: update selectedPreset, then add.
+                          // Let's call the add function.
+                          onAddToCart({
+                            id: 'xerox-' + Date.now(),
+                            name: preset.title,
+                            category: 'xerox',
+                            quantity: 1,
+                            unitPrice: preset.defaultRate,
+                            amount: preset.defaultRate,
+                            details: '1 unit',
+                          });
+                        }}
+                        className="w-7 h-7 rounded-full bg-blue-900 text-white flex items-center justify-center hover:bg-blue-800 transition"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div>
@@ -464,6 +490,14 @@ export const XeroxCalculator: React.FC<XeroxCalculatorProps> = ({
                   <span>Add to Current Bill Cart</span>
                 </>
               )}
+            </button>
+
+            <button
+              onClick={handleAdd}
+              className="w-full py-2.5 rounded-xl font-bold text-xs bg-slate-200 hover:bg-slate-300 text-slate-900 flex items-center justify-center gap-2 shadow-xs transition"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Xerox Product</span>
             </button>
 
             <button
